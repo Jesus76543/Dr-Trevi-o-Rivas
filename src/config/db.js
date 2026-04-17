@@ -1,12 +1,13 @@
 const { Pool } = require('pg')
 require('dotenv').config()
 
+const isProduction = process.env.NODE_ENV === 'production'
+
 const pool = new Pool({
-  host: process.env.DB_HOST,
-  port: process.env.DB_PORT,
-  database: process.env.DB_NAME,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
+  // Si existe DATABASE_URL (en Render), la usa completa. 
+  // Si no, usa tus variables locales una por una.
+  connectionString: process.env.DATABASE_URL,
+  ssl: isProduction ? { rejectUnauthorized: false } : false
 })
 
 pool.on('connect', () => {
@@ -15,7 +16,8 @@ pool.on('connect', () => {
 
 pool.on('error', (err) => {
   console.error('❌ Error en la base de datos:', err)
-  process.exit(-1)
+  // No cerramos el proceso en producción para que el servidor no se caiga
+  if (!isProduction) process.exit(-1)
 })
 
 module.exports = pool
